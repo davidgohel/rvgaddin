@@ -1,0 +1,18 @@
+Package: rvgaddin
+Title: RStudio add-ins for rvg
+Version: 0.0.1
+Authors@R: c(
+    person("David", "Gohel", , "david.gohel@ardata.fr", role = c("aut", "cre"))
+  )
+Description: This add-in capture the current plot and write it to a Microsoft
+    Word or PowerPoint document.
+Depends:
+    R (>= 3.2.2)
+License: GPL-3
+Imports:
+    shiny,
+    miniUI,
+    rvg
+Suggests:
+    rstudioapi
+RoxygenNote: 5.0.1

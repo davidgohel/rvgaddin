@@ -1,0 +1,4 @@
+Name: MS Graphics
+Description: Write current plot  to a Microsoft Word document or a PowerPoint presentation
+Binding: rvg_addin
+Interactive: true
