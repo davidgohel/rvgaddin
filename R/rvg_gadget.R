@@ -1,56 +1,58 @@
 #' @import rvg
 #' @import miniUI
 #' @import shiny
-#' @export
 rvg_gadget <- function() {
 
   ui <- miniPage(
-    gadgetTitleBar("Send current plot to Microsoft documents"),
-        miniContentPanel(
-          fillCol(
-            fillRow(
-                    selectInput("format", "Format", choices = c("MS PowerPoint" = "pptx", "MS Word" = "docx"), selected = 1 ),
-                    div(),
-                    textInput( inputId = "basename", label = "File name", value = "Rplot" )
-                    ),
-            fillRow(
-              downloadButton('downloadData', 'Download')
-            ),
-            fillRow(
-              numericInput( "width", "Plot width", min = 3, value = 6, step = .5),
-              numericInput( "height", "Plot height", min = 3, value = 6, step = .5),
-              numericInput("pwidth", "Page width", min = 5, value = 10, step = .5),
-              numericInput("pheight", "Page height", min = 5, value = 8, step = .5)
-            ),
-            fillRow(
-              h4("Word only")
-            ),
-            fillRow(
-              numericInput( "ml", "Margin left", min = 0, value = 1, step = .5),
-              numericInput( "mr", "Margin right", min = 0, value = 1, step = .5),
-              numericInput( "mt", "Margin top", min = 0, value = 1, step = .5),
-              numericInput( "mb", "Margin bottom", min = 0, value = 1, step = .5)
-            )
-          )
-        )
+    gadgetTitleBar("Send plot to MS document"),
+    miniContentPanel(
+      fillCol(
+        fillRow(
+          radioButtons("format", "Format",
+                       choices = c("PowerPoint" = "pptx", "Word" = "docx", "Excel" = "xlsx"), inline = TRUE,
+                       selected = "pptx" ),
+          div(),
+          textInput( inputId = "basename", label = "File name", value = "Rplot" ),
+          flex = c(6,1,4) ),
+        fillRow(
+          div(style = "text-align:center;",
+            downloadButton('downloadData', 'Download', class = "btn-primary") )
+        ),
+        fillRow(
+          sliderInput( "width", "Plot width", min = 3, max = 20, value = 6, step = .5),
+          div(),
+          sliderInput( "height", "Plot height", min = 3, max = 20, value = 6, step = .5),
+          flex = c(4,1,4) ),
+        fillRow(
+          sliderInput("pwidth", "Page width", min = 5, max = 20, value = 10, step = .5),
+          div(),
+          sliderInput("pheight", "Page height", min = 5, max = 20, value = 8, step = .5),
+          flex = c(4,1,4) ),
+        flex = c(2,2,2,2)
       )
+    )
+  )
+
   server <- function(input, output) {
+
+    currplot <- reactiveValues(plot = recordPlot() )
+
     output$downloadData <- downloadHandler(
       filename = function() {
         paste0(input$basename, ".", input$format)
       },
       content = function(file) {
-        plot_ <- try( recordPlot() )
-        if( inherits(plot_, "try-error") ) stopApp()
         if (input$format == "docx"){
-          write_docx(file = file, code = replayPlot(plot_),
+          write_docx(file = file, code = replayPlot(currplot$plot),
                      width = input$width, height = input$height,
-                     pagesize = c(width = input$pwidth, height = input$pheight),
-                     margins = c(left = input$ml, right = input$mr,
-                                 top = input$mt, bottom = input$mb)
+                     pagesize = c(width = input$pwidth, height = input$pheight)
                      )
+        } else if (input$format == "pptx"){
+          write_pptx(file = file, code = replayPlot(currplot$plot),
+                     width = input$width, height = input$height,
+                     size = c(width = input$pwidth, height = input$pheight))
         } else {
-          write_pptx(file = file, code = replayPlot(plot_),
+          write_xlsx(file = file, code = replayPlot(currplot$plot),
                      width = input$width, height = input$height,
                      size = c(width = input$pwidth, height = input$pheight))
         }
@@ -58,6 +60,9 @@ rvg_gadget <- function() {
     )
 
     observeEvent(input$done, {
+      stopApp()
+    })
+    observeEvent(input$cancel, {
       stopApp()
     })
 
